@@ -8,12 +8,18 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * Solo agrega cada columna si todavía no existe
+     * (create_productos_table ya las incluye en bases nuevas).
      */
     public function up(): void
     {
         Schema::table('productos', function (Blueprint $table) {
-            $table->string('nombre');
-            $table->string('descripcion');
+            if (!Schema::hasColumn('productos', 'nombre')) {
+                $table->string('nombre');
+            }
+            if (!Schema::hasColumn('productos', 'descripcion')) {
+                $table->string('descripcion');
+            }
         });
     }
 
@@ -22,8 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('productos', function (Blueprint $table) {
-            //
-        });
+        //
     }
 };
