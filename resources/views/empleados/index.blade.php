@@ -72,7 +72,7 @@
                         <a href="/empleados/{{ $empleado->id }}/edit" class="font-medium text-[#0D9488] hover:underline">Editar</a>
 
                         <form method="POST" action="/empleados/{{ $empleado->id }}"
-                              onsubmit="return confirm('¿Seguro de que querés borrar a este empleado?')">
+                              data-confirmar="¿Seguro de que querés borrar a este empleado?">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="font-medium text-slate-500 hover:text-slate-700 hover:underline">
@@ -112,7 +112,7 @@
                                     <a href="/empleados/{{ $empleado->id }}/edit" class="font-medium text-[#0D9488] hover:underline">Editar</a>
 
                                     <form method="POST" action="/empleados/{{ $empleado->id }}"
-                                          onsubmit="return confirm('¿Seguro de que querés borrar a este empleado?')">
+                                          data-confirmar="¿Seguro de que querés borrar a este empleado?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="font-medium text-slate-500 hover:text-slate-700 hover:underline">

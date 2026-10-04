@@ -123,7 +123,7 @@
                 const div = document.createElement('div');
                 div.className = 'relative aspect-square overflow-hidden rounded-md border border-[#E2E8F0]';
                 div.innerHTML = `
-                    <img src="${URL.createObjectURL(archivo)}" class="h-full w-full object-cover">
+                    <img src="${URL.createObjectURL(archivo)}" data-ampliable class="h-full w-full cursor-zoom-in object-cover">
                     <button type="button" onclick="quitarFoto(${i})"
                             class="absolute right-1 top-1 rounded bg-white/90 px-1.5 text-xs font-medium text-slate-600 hover:text-slate-900">
                         ✕

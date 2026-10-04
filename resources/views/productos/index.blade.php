@@ -70,7 +70,21 @@
         <div class="mt-6 flex flex-col gap-3 sm:hidden">
             @foreach ($productos as $producto)
                 <div class="rounded-lg border border-[#E2E8F0] bg-white p-4 shadow-sm">
-                    <p class="font-medium text-[#0F172A]">{{ $producto->nombre }}</p>
+                    <div class="flex items-center gap-3">
+                        @if ($producto->fotos->isNotEmpty())
+                            <img src="{{ asset('storage/' . $producto->fotos->first()->ruta) }}" alt=""
+                                 data-ampliable
+                                 data-fotos='@json($producto->fotos->map(fn($f) => asset("storage/" . $f->ruta)))'
+                                 class="h-10 w-10 shrink-0 cursor-zoom-in rounded-md border border-[#E2E8F0] object-cover">
+                        @else
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-dashed border-[#E2E8F0] bg-slate-50 text-slate-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A1.5 1.5 0 0021.75 19.5V4.5A1.5 1.5 0 0020.25 3H3.75A1.5 1.5 0 002.25 4.5v15A1.5 1.5 0 003.75 21zM14.25 8.25h.008v.008h-.008V8.25z" />
+                                </svg>
+                            </div>
+                        @endif
+                        <p class="font-medium text-[#0F172A]">{{ $producto->nombre }}</p>
+                    </div>
 
                     @if ($producto->categorias->isNotEmpty())
                         <div class="mt-2 flex flex-wrap gap-1.5">
@@ -87,7 +101,7 @@
                         <a href="/productos/{{ $producto->id }}/edit" class="font-medium text-[#0D9488] hover:underline">Editar</a>
 
                         <form method="POST" action="/productos/{{ $producto->id }}"
-                              onsubmit="return confirm('¿Seguro de que querés borrar este producto?')">
+                              data-confirmar="¿Seguro de que querés borrar este producto?">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="font-medium text-slate-500 hover:text-slate-700 hover:underline">
@@ -112,7 +126,23 @@
                 <tbody class="divide-y divide-[#E2E8F0]">
                     @foreach ($productos as $producto)
                         <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-3 font-medium text-[#0F172A]">{{ $producto->nombre }}</td>
+                            <td class="px-6 py-3 font-medium text-[#0F172A]">
+                                <div class="flex items-center gap-3">
+                                    @if ($producto->fotos->isNotEmpty())
+                                        <img src="{{ asset('storage/' . $producto->fotos->first()->ruta) }}" alt=""
+                                             data-ampliable
+                                             data-fotos='@json($producto->fotos->map(fn($f) => asset("storage/" . $f->ruta)))'
+                                             class="h-10 w-10 shrink-0 cursor-zoom-in rounded-md border border-[#E2E8F0] object-cover">
+                                    @else
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-dashed border-[#E2E8F0] bg-slate-50 text-slate-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A1.5 1.5 0 0021.75 19.5V4.5A1.5 1.5 0 0020.25 3H3.75A1.5 1.5 0 002.25 4.5v15A1.5 1.5 0 003.75 21zM14.25 8.25h.008v.008h-.008V8.25z" />
+                                            </svg>
+                                        </div>
+                                    @endif
+                                    <span>{{ $producto->nombre }}</span>
+                                </div>
+                            </td>
                             <td class="px-6 py-3">
                                 <div class="flex flex-wrap gap-1.5">
                                     @foreach ($producto->categorias as $categoria)
@@ -128,7 +158,7 @@
                                     <a href="/productos/{{ $producto->id }}/edit" class="font-medium text-[#0D9488] hover:underline">Editar</a>
 
                                     <form method="POST" action="/productos/{{ $producto->id }}"
-                                          onsubmit="return confirm('¿Seguro de que querés borrar este producto?')">
+                                          data-confirmar="¿Seguro de que querés borrar este producto?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="font-medium text-slate-500 hover:text-slate-700 hover:underline">

@@ -186,7 +186,7 @@
                                 </a>
 
                                 <form method="POST" action="/variantes/{{ $variante->id }}"
-                                      onsubmit="return confirm('¿Seguro de que querés borrar esta variante?')">
+                                      data-confirmar="¿Seguro de que querés borrar esta variante?">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-sm font-medium text-slate-500 hover:text-slate-700 hover:underline">
@@ -318,7 +318,7 @@
                 const div = document.createElement('div');
                 div.className = 'relative aspect-square overflow-hidden rounded-md border border-[#E2E8F0]';
                 div.innerHTML = `
-                    <img src="${URL.createObjectURL(archivo)}" class="h-full w-full object-cover">
+                    <img src="${URL.createObjectURL(archivo)}" data-ampliable class="h-full w-full cursor-zoom-in object-cover">
                     <button type="button" onclick="quitarFotoVariante(${i})"
                             class="absolute right-1 top-1 rounded bg-white/90 px-1.5 text-xs font-medium text-slate-600 hover:text-slate-900">
                         ✕

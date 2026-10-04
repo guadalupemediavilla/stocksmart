@@ -15,5 +15,6 @@
     </main>
 
     @include('partials.lightbox')
+    @include('partials.confirmar')
 </body>
 </html>

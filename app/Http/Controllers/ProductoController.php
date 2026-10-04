@@ -13,7 +13,7 @@ class ProductoController extends Controller
 {
 public function index(Request $request)
 {
-    $query = Producto::query()->with('categorias');
+    $query = Producto::query()->with('categorias', 'fotos');
 
     if ($request->filled('buscar')) {
         $query->where('nombre', 'like', '%' . $request->buscar . '%');

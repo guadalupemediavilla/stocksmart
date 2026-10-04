@@ -58,7 +58,7 @@
                         <a href="/categorias/{{ $categoria->id }}/edit" class="font-medium text-[#0D9488] hover:underline">Editar</a>
 
                         <form method="POST" action="/categorias/{{ $categoria->id }}"
-                              onsubmit="return confirm('¿Seguro de que querés borrar esta categoría?')">
+                              data-confirmar="¿Seguro de que querés borrar esta categoría?">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="font-medium text-slate-500 hover:text-slate-700 hover:underline">
