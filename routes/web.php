@@ -12,7 +12,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check() ? redirect('/home') : redirect('/login');
 });
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
