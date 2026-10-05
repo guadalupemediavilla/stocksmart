@@ -20,10 +20,11 @@ class DashboardController extends Controller
 
         foreach ($variantes as $variante) {
             $precioActual = $variante->precios->sortByDesc('fecha')->first();
-            $stockActual = $variante->stocks->sortByDesc('fecha')->first();
+            $tieneStock = $variante->stocks->isNotEmpty();
+            $stockActual = $variante->stockActual();
 
-            if ($precioActual && $stockActual) {
-                $subtotal = $precioActual->precio * $stockActual->cantidad;
+            if ($precioActual && $tieneStock) {
+                $subtotal = $precioActual->precio * $stockActual;
                 $valorInventario += $subtotal;
 
                 $nombreProducto = $variante->producto->nombre;
@@ -32,10 +33,10 @@ class DashboardController extends Controller
                 }
                 $valorPorProducto[$nombreProducto] += $subtotal;
 
-                if ($stockActual->cantidad <= 5) {
+                if ($stockActual <= 5) {
                     $stockBajo[] = [
                         'variante' => $variante,
-                        'cantidad' => $stockActual->cantidad,
+                        'cantidad' => $stockActual,
                     ];
                 }
             }

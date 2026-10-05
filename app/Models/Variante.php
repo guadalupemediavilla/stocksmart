@@ -27,7 +27,15 @@ class Variante extends Model
     }
 
     public function fotos()
-{
-    return $this->hasMany(FotoVariante::class, 'id_variante');
-}
+    {
+        return $this->hasMany(FotoVariante::class, 'id_variante');
+    }
+
+    public function stockActual()
+    {
+        $entradas = $this->stocks->where('movimiento', 'entrada')->sum('cantidad');
+        $salidas  = $this->stocks->where('movimiento', 'salida')->sum('cantidad');
+
+        return $entradas - $salidas;
+    }
 }

@@ -71,8 +71,9 @@
             @php
                 $atributos = json_decode($variante->atributos, true) ?? [];
                 $precioActual = $variante->precios->sortByDesc('fecha')->first();
-                $stockActual = $variante->stocks->sortByDesc('fecha')->first();
-                $stockBajo = $stockActual && $stockActual->cantidad <= 5;
+                $tieneStock = $variante->stocks->isNotEmpty();
+                $stockActual = $variante->stockActual();
+                $stockBajo = $tieneStock && $stockActual <= 5;
                 $idFoto = 'foto-variante-' . $variante->id;
             @endphp
 
@@ -137,11 +138,11 @@
                                 <span class="text-slate-500">Stock:</span>
                                 @if ($stockBajo)
                                     <span class="rounded-full bg-[#D97706]/10 px-2 py-0.5 font-medium text-[#D97706]">
-                                        {{ $stockActual->cantidad }} {{ $stockActual->cantidad == 1 ? 'unidad' : 'unidades' }} — stock bajo
+                                        {{ $stockActual }} {{ $stockActual == 1 ? 'unidad' : 'unidades' }} — stock bajo
                                     </span>
                                 @else
                                     <span class="font-medium text-[#0F172A]">
-                                        {{ $stockActual ? $stockActual->cantidad . ($stockActual->cantidad == 1 ? ' unidad' : ' unidades') : 'Sin stock cargado' }}
+                                        {{ $tieneStock ? $stockActual . ($stockActual == 1 ? ' unidad' : ' unidades') : 'Sin stock cargado' }}
                                     </span>
                                 @endif
                             </p>
