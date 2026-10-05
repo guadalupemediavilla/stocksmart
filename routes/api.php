@@ -16,4 +16,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/productos/{id}', [ProductoApiController::class, 'destroy']);
 
     Route::get('/movimientos', [MovimientoApiController::class, 'index']);
+    Route::post('/movimientos', [MovimientoApiController::class, 'store']);
 });
