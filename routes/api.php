@@ -18,6 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/movimientos', [MovimientoApiController::class, 'index']);
     Route::post('/movimientos', [MovimientoApiController::class, 'store']);
+    Route::post('/movimientos/lote', [MovimientoApiController::class, 'lote']);
 
     Route::get('/precios', [PrecioApiController::class, 'index']);
 });
