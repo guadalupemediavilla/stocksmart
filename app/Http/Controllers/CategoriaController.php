@@ -62,10 +62,11 @@ public function destroy($id)
 {
     $categoria = Categoria::find($id);
 
-    if ($categoria->productos()->withTrashed()->count() > 0) {
-        return redirect('/categorias')->with('error', 'No se puede borrar "' . $categoria->nombre . '" porque tiene productos asignados (incluyendo productos borrados). Quitale la categoría a esos productos primero.');
+    if ($categoria->productos()->count() > 0) {
+        return redirect('/categorias')->with('error', 'No se puede borrar "' . $categoria->nombre . '" porque tiene productos activos asignados. Quitale la categoría a esos productos primero.');
     }
 
+    $categoria->productos()->detach();
     $categoria->delete();
 
     return redirect('/categorias');
