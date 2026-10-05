@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductoApiController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\MovimientoApiController;
+use App\Http\Controllers\Api\PrecioApiController;
 
 Route::post('/login', [AuthApiController::class, 'login']);
 
@@ -17,4 +18,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/movimientos', [MovimientoApiController::class, 'index']);
     Route::post('/movimientos', [MovimientoApiController::class, 'store']);
+
+    Route::get('/precios', [PrecioApiController::class, 'index']);
 });
