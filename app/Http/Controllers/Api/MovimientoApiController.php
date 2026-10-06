@@ -65,4 +65,36 @@ class MovimientoApiController extends Controller
 
         return response()->json($creados, 201);
     }
+
+    /**
+     * Crea varias entradas como una sola operación atómica (todas o ninguna), todas con
+     * la misma fecha. Se usa para devolver stock al anular una venta de kit o un ajuste
+     * registrado desde una app externa.
+     */
+    public function loteEntradas(Request $request)
+    {
+        $datos = $request->validate([
+            'fecha' => ['nullable', 'date', 'before_or_equal:today'],
+            'movimientos' => ['required', 'array', 'min:1'],
+            'movimientos.*.id_variante' => ['required', 'integer', 'exists:variantes,id'],
+            'movimientos.*.cantidad' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $fecha = $datos['fecha'] ?? now();
+        $idEmpleado = Auth::id();
+
+        $creados = DB::transaction(function () use ($datos, $fecha, $idEmpleado) {
+            return collect($datos['movimientos'])->map(function ($item) use ($fecha, $idEmpleado) {
+                return Stock::create([
+                    'id_variante' => $item['id_variante'],
+                    'cantidad' => $item['cantidad'],
+                    'movimiento' => 'entrada',
+                    'id_empleado' => $idEmpleado,
+                    'fecha' => $fecha,
+                ]);
+            });
+        });
+
+        return response()->json($creados, 201);
+    }
 }
