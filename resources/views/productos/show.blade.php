@@ -181,6 +181,11 @@
                             </form>
 
                             <div class="ml-auto flex items-center gap-4">
+                                <a href="/variantes/{{ $variante->id }}/movimientos"
+                                   class="text-sm font-medium text-[#0D9488] hover:underline">
+                                    Movimientos
+                                </a>
+
                                 <a href="/variantes/{{ $variante->id }}/edit"
                                    class="text-sm font-medium text-[#0D9488] hover:underline">
                                     Editar variante

@@ -125,6 +125,68 @@ public function update(Request $request, $id)
         return redirect('/productos/' . $id_producto);
     }
 
+    public function movimientos(Request $request, $id)
+    {
+        $variante = Variante::with('producto')->findOrFail($id);
+
+        $anio = (int) $request->input('anio', now()->year);
+        $mes = (int) $request->input('mes', now()->month);
+        $dia = $request->filled('dia') ? (int) $request->input('dia') : null;
+
+        $primerMovimiento = $variante->stocks()->min('fecha');
+        $anioMinimo = $primerMovimiento ? \Carbon\Carbon::parse($primerMovimiento)->year : now()->year;
+        $anioMaximo = now()->year;
+
+        $inicioPeriodo = \Carbon\Carbon::create($anio, $mes, $dia ?? 1)->startOfDay();
+        $finPeriodo = $dia ? $inicioPeriodo->copy()->endOfDay() : $inicioPeriodo->copy()->endOfMonth()->endOfDay();
+
+        $diasEnMes = \Carbon\Carbon::create($anio, $mes, 1)->daysInMonth;
+
+        $stockInicio = $variante->stocks()
+            ->where('fecha', '<', $inicioPeriodo->toDateString())
+            ->get()
+            ->groupBy('movimiento')
+            ->map(fn($grupo) => $grupo->sum('cantidad'));
+
+        $stockInicio = ($stockInicio['entrada'] ?? 0) - ($stockInicio['salida'] ?? 0);
+
+        $movimientosPeriodo = $variante->stocks()
+            ->with('empleado')
+            ->whereBetween('fecha', [$inicioPeriodo->toDateString(), $finPeriodo->toDateString()])
+            ->orderBy('fecha')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $entradasPeriodo = $movimientosPeriodo->where('movimiento', 'entrada')->sum('cantidad');
+        $salidasPeriodo = $movimientosPeriodo->where('movimiento', 'salida')->sum('cantidad');
+        $stockCierre = $stockInicio + $entradasPeriodo - $salidasPeriodo;
+
+        $saldo = $stockInicio;
+        $filas = $movimientosPeriodo->map(function ($movimiento) use (&$saldo) {
+            $saldo += $movimiento->movimiento === 'entrada' ? $movimiento->cantidad : -$movimiento->cantidad;
+            return [
+                'movimiento' => $movimiento,
+                'saldo' => $saldo,
+            ];
+        });
+
+        return view('variantes.movimientos', [
+            'variante' => $variante,
+            'anio' => $anio,
+            'mes' => $mes,
+            'dia' => $dia,
+            'anioMinimo' => $anioMinimo,
+            'anioMaximo' => $anioMaximo,
+            'diasEnMes' => $diasEnMes,
+            'stockInicio' => $stockInicio,
+            'entradasPeriodo' => $entradasPeriodo,
+            'salidasPeriodo' => $salidasPeriodo,
+            'stockCierre' => $stockCierre,
+            'filas' => $filas,
+        ]);
+    }
+
     public function actualizar(Request $request, $id_variante)
     {
         if ($request->filled('precio')) {

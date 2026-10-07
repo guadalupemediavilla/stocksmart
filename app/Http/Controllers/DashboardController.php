@@ -6,11 +6,13 @@ use App\Services\DolarService;
 use App\Models\Producto;
 use App\Models\Variante;
 use App\Models\Stock;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $variantes = Variante::whereHas('producto')->with(['precios', 'stocks', 'producto'])->get();
 
@@ -59,21 +61,49 @@ if (count($valorPorProducto) > 5) {
             ->take(10)
             ->get();
 
-        $movimientos30dias = Stock::where('fecha', '>=', now()->subDays(30))->get();
+        $dolar = DolarService::cotizacionOficial();
 
-        $entradasPorDia = [];
-        $salidasPorDia = [];
+        // ===== Filtro de mes/año para las tarjetas, el gráfico de movimientos y "más movidos" =====
+        $anio = (int) $request->input('anio', now()->year);
+        $mes = (int) $request->input('mes', now()->month);
 
-        foreach ($movimientos30dias as $movimiento) {
-            $dia = \Carbon\Carbon::parse($movimiento->fecha)->format('d/m');
+        $primerMovimiento = Stock::min('fecha');
+        $anioMinimo = $primerMovimiento ? Carbon::parse($primerMovimiento)->year : now()->year;
+        $anioMaximo = now()->year;
+
+        $movimientosMes = Stock::whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->whereHas('variante.producto')
+            ->with('variante.producto')
+            ->get();
+
+        $entradasMes = $movimientosMes->where('movimiento', 'entrada')->sum('cantidad');
+        $salidasMes = $movimientosMes->where('movimiento', 'salida')->sum('cantidad');
+
+        $diasEnMes = Carbon::create($anio, $mes, 1)->daysInMonth;
+        $entradasPorDia = array_fill(1, $diasEnMes, 0);
+        $salidasPorDia = array_fill(1, $diasEnMes, 0);
+
+        foreach ($movimientosMes as $movimiento) {
+            $dia = Carbon::parse($movimiento->fecha)->day;
 
             if ($movimiento->movimiento === 'entrada') {
-                $entradasPorDia[$dia] = ($entradasPorDia[$dia] ?? 0) + $movimiento->cantidad;
+                $entradasPorDia[$dia] += $movimiento->cantidad;
             } else {
-                $salidasPorDia[$dia] = ($salidasPorDia[$dia] ?? 0) + $movimiento->cantidad;
+                $salidasPorDia[$dia] += $movimiento->cantidad;
             }
         }
-        $dolar = DolarService::cotizacionOficial();
+
+        $masMovidos = $movimientosMes
+            ->where('movimiento', 'salida')
+            ->groupBy(fn($s) => $s->variante->producto->id)
+            ->map(fn($grupo) => [
+                'producto' => $grupo->first()->variante->producto,
+                'cantidad' => $grupo->sum('cantidad'),
+            ])
+            ->sortByDesc('cantidad')
+            ->take(5)
+            ->values();
 
         return view('dashboard', [
             'dolar' => $dolar,
@@ -83,8 +113,15 @@ if (count($valorPorProducto) > 5) {
             'totalVariantes' => $totalVariantes,
             'ultimosMovimientos' => $ultimosMovimientos,
            'valorPorProducto' => $topProductos,
+            'anio' => $anio,
+            'mes' => $mes,
+            'anioMinimo' => $anioMinimo,
+            'anioMaximo' => $anioMaximo,
+            'entradasMes' => $entradasMes,
+            'salidasMes' => $salidasMes,
             'entradasPorDia' => $entradasPorDia,
             'salidasPorDia' => $salidasPorDia,
+            'masMovidos' => $masMovidos,
         ]);
     }
 }

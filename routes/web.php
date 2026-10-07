@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/variantes/{id_variante}/actualizar', [VarianteController::class, 'actualizar']);
     Route::get('/variantes/{id}/edit', [VarianteController::class, 'edit']);
 Route::put('/variantes/{id}', [VarianteController::class, 'update']);
+    Route::get('/variantes/{id}/movimientos', [VarianteController::class, 'movimientos']);
 
     Route::post('/variantes/{id_variante}/precios', [PrecioController::class, 'store']);
     Route::post('/variantes/{id_variante}/stocks', [StockController::class, 'store']);

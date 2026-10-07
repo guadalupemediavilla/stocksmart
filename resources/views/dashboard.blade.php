@@ -5,18 +5,14 @@
 @section('content')
 <a href="/home" class="text-sm font-medium text-[#0D9488] hover:underline">← Volver al inicio</a>
 
-    {{-- Alinea entradas y salidas por día (0 si no hubo movimiento) en orden cronológico --}}
     @php
-        $dias = [];
-        for ($i = 30; $i >= 0; $i--) {
-            $dia = now()->subDays($i)->format('d/m');
-            if (isset($entradasPorDia[$dia]) || isset($salidasPorDia[$dia])) {
-                $dias[] = $dia;
-            }
-        }
-        $dias = array_values(array_unique(array_merge($dias, array_keys($entradasPorDia + $salidasPorDia))));
-        $serieEntradas = array_map(fn ($d) => $entradasPorDia[$d] ?? 0, $dias);
-        $serieSalidas = array_map(fn ($d) => $salidasPorDia[$d] ?? 0, $dias);
+        $meses = [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
+            7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+        ];
+        $dias = array_keys($entradasPorDia);
+        $serieEntradas = array_values($entradasPorDia);
+        $serieSalidas = array_values($salidasPorDia);
     @endphp
 
     <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">Panel de control</h1>
@@ -41,6 +37,48 @@
         </div>
     </div>
 
+    {{-- ===================== FILTRO DE MES/AÑO ===================== --}}
+    <form method="GET" action="/dashboard" class="mt-6 rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <div>
+                <label class="block text-xs font-medium text-slate-500">Mes</label>
+                <select name="mes" class="mt-1 w-full rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0D9488] focus:outline-none focus:ring-1 focus:ring-[#0D9488]">
+                    @foreach ($meses as $numero => $nombre)
+                        <option value="{{ $numero }}" {{ $mes == $numero ? 'selected' : '' }}>{{ $nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-500">Año</label>
+                <select name="anio" class="mt-1 w-full rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0D9488] focus:outline-none focus:ring-1 focus:ring-[#0D9488]">
+                    @for ($a = $anioMaximo; $a >= $anioMinimo; $a--)
+                        <option value="{{ $a }}" {{ $anio == $a ? 'selected' : '' }}>{{ $a }}</option>
+                    @endfor
+                </select>
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="w-full rounded-md bg-[#0F172A] px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0F172A]/90 sm:w-auto">
+                    Filtrar
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <div class="mt-4 grid grid-cols-2 gap-4">
+        <div class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <p class="text-sm font-medium text-slate-500">Entradas del mes</p>
+            <p class="mt-2 text-3xl font-bold tracking-tight text-[#0F172A]">{{ $entradasMes }}</p>
+        </div>
+
+        <div class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <p class="text-sm font-medium text-slate-500">Salidas del mes</p>
+            <p class="mt-2 text-3xl font-bold tracking-tight text-[#0F172A]">{{ $salidasMes }}</p>
+        </div>
+    </div>
+
     <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
 
         <div class="flex min-w-0 flex-col gap-6 lg:col-span-3">
@@ -57,14 +95,14 @@
             </section>
 
             <section class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-[#0F172A]">Movimientos de los últimos 30 días</h2>
+                <h2 class="text-lg font-semibold text-[#0F172A]">Movimientos de {{ $meses[$mes] }} {{ $anio }}</h2>
 
-                @if (count($dias))
+                @if ($entradasMes || $salidasMes)
                     <div class="relative mt-4 h-64 min-w-0 sm:h-72">
                         <canvas id="graficoMovimientos" role="img" aria-label="Gráfico de líneas de entradas y salidas de stock por día"></canvas>
                     </div>
                 @else
-                    <p class="mt-4 text-sm text-slate-500">No hubo movimientos en los últimos 30 días.</p>
+                    <p class="mt-4 text-sm text-slate-500">No hubo movimientos en este mes.</p>
                 @endif
             </section>
         </div>
@@ -123,6 +161,27 @@
                         </li>
                     @empty
                         <li class="px-6 py-6 text-sm text-slate-500">Todavía no hay movimientos registrados.</li>
+                    @endforelse
+                </ul>
+            </section>
+
+            <section class="rounded-lg border border-[#E2E8F0] bg-white shadow-sm">
+                <div class="border-b border-[#E2E8F0] px-6 py-4">
+                    <h2 class="text-lg font-semibold text-[#0F172A]">Más movidos del mes</h2>
+                </div>
+
+                <ul class="divide-y divide-[#E2E8F0]">
+                    @forelse ($masMovidos as $item)
+                        <li class="flex items-center justify-between gap-4 px-6 py-3">
+                            <a href="/productos/{{ $item['producto']->id }}" class="min-w-0 break-words font-medium text-[#0D9488] hover:underline">
+                                {{ $item['producto']->nombre }}
+                            </a>
+                            <span class="shrink-0 text-sm text-slate-500">
+                                {{ $item['cantidad'] }} {{ $item['cantidad'] == 1 ? 'unidad' : 'unidades' }}
+                            </span>
+                        </li>
+                    @empty
+                        <li class="px-6 py-6 text-sm text-slate-500">No hubo salidas en este mes.</li>
                     @endforelse
                 </ul>
             </section>
@@ -252,7 +311,11 @@
                         }
                     },
                     scales: {
-                        x: { offset: true, grid: { display: false } },
+                        x: {
+                            offset: true,
+                            grid: { display: false },
+                            ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+                        },
                         y: {
                             beginAtZero: true,
                             border: { display: false },
