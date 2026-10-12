@@ -22,7 +22,7 @@ class DashboardController extends Controller
 
         foreach ($variantes as $variante) {
             $precioActual = $variante->precios->sortByDesc('fecha')->first();
-            $tieneStock = $variante->stocks->isNotEmpty();
+            $tieneStock = $variante->stocks->reject->estaAnulado()->isNotEmpty();
             $stockActual = $variante->stockActual();
 
             if ($precioActual && $tieneStock) {
@@ -56,45 +56,66 @@ if (count($valorPorProducto) > 5) {
         $totalProductos = Producto::count();
         $totalVariantes = Variante::whereHas('producto')->count();
 
-        $ultimosMovimientos = Stock::with(['variante.producto', 'empleado'])
-            ->orderByDesc('fecha')
-            ->take(10)
-            ->get();
-
         $dolar = DolarService::cotizacionOficial();
 
-        // ===== Filtro de mes/año para las tarjetas, el gráfico de movimientos y "más movidos" =====
+        // ===== Filtro de período (mes/año y día opcional) para el bloque inferior =====
         $anio = (int) $request->input('anio', now()->year);
         $mes = (int) $request->input('mes', now()->month);
+        $dia = $request->filled('dia') ? (int) $request->input('dia') : null;
 
         $primerMovimiento = Stock::min('fecha');
         $anioMinimo = $primerMovimiento ? Carbon::parse($primerMovimiento)->year : now()->year;
         $anioMaximo = now()->year;
 
-        $movimientosMes = Stock::whereYear('fecha', $anio)
-            ->whereMonth('fecha', $mes)
+        $diasEnMes = Carbon::create($anio, $mes, 1)->daysInMonth;
+
+        $inicioPeriodo = Carbon::create($anio, $mes, $dia ?? 1)->startOfDay();
+        $finPeriodo = $dia ? $inicioPeriodo->copy()->endOfDay() : $inicioPeriodo->copy()->endOfMonth()->endOfDay();
+
+        $movimientosPeriodo = Stock::vigentes()
+            ->whereBetween('fecha', [$inicioPeriodo->toDateString(), $finPeriodo->toDateString()])
             ->whereHas('variante.producto')
             ->with('variante.producto')
             ->get();
 
-        $entradasMes = $movimientosMes->where('movimiento', 'entrada')->sum('cantidad');
-        $salidasMes = $movimientosMes->where('movimiento', 'salida')->sum('cantidad');
+        $entradasPeriodo = $movimientosPeriodo->where('movimiento', 'entrada')->sum('cantidad');
+        $salidasPeriodo = $movimientosPeriodo->where('movimiento', 'salida')->sum('cantidad');
 
-        $diasEnMes = Carbon::create($anio, $mes, 1)->daysInMonth;
-        $entradasPorDia = array_fill(1, $diasEnMes, 0);
-        $salidasPorDia = array_fill(1, $diasEnMes, 0);
+        $categoriasMovimientos = [];
+        $serieEntradasMovimientos = [];
+        $serieSalidasMovimientos = [];
+        $valoresMovimientos = [];
 
-        foreach ($movimientosMes as $movimiento) {
-            $dia = Carbon::parse($movimiento->fecha)->day;
+        if ($dia) {
+            $categoriasMovimientos = ['Entradas', 'Salidas'];
+            $valoresMovimientos = [$entradasPeriodo, $salidasPeriodo];
+        } else {
+            $entradasPorDia = array_fill(1, $diasEnMes, 0);
+            $salidasPorDia = array_fill(1, $diasEnMes, 0);
 
-            if ($movimiento->movimiento === 'entrada') {
-                $entradasPorDia[$dia] += $movimiento->cantidad;
-            } else {
-                $salidasPorDia[$dia] += $movimiento->cantidad;
+            foreach ($movimientosPeriodo as $movimiento) {
+                $diaMovimiento = Carbon::parse($movimiento->fecha)->day;
+
+                if ($movimiento->movimiento === 'entrada') {
+                    $entradasPorDia[$diaMovimiento] += $movimiento->cantidad;
+                } else {
+                    $salidasPorDia[$diaMovimiento] += $movimiento->cantidad;
+                }
             }
+
+            $categoriasMovimientos = array_keys($entradasPorDia);
+            $serieEntradasMovimientos = array_values($entradasPorDia);
+            $serieSalidasMovimientos = array_values($salidasPorDia);
         }
 
-        $masMovidos = $movimientosMes
+        $ultimosMovimientos = Stock::vigentes()
+            ->with(['variante.producto', 'empleado'])
+            ->whereBetween('fecha', [$inicioPeriodo->toDateString(), $finPeriodo->toDateString()])
+            ->orderByDesc('fecha')
+            ->take(10)
+            ->get();
+
+        $masMovidos = $movimientosPeriodo
             ->where('movimiento', 'salida')
             ->groupBy(fn($s) => $s->variante->producto->id)
             ->map(fn($grupo) => [
@@ -111,16 +132,20 @@ if (count($valorPorProducto) > 5) {
             'stockBajo' => $stockBajo,
             'totalProductos' => $totalProductos,
             'totalVariantes' => $totalVariantes,
-            'ultimosMovimientos' => $ultimosMovimientos,
-           'valorPorProducto' => $topProductos,
+            'valorPorProducto' => $topProductos,
             'anio' => $anio,
             'mes' => $mes,
+            'dia' => $dia,
             'anioMinimo' => $anioMinimo,
             'anioMaximo' => $anioMaximo,
-            'entradasMes' => $entradasMes,
-            'salidasMes' => $salidasMes,
-            'entradasPorDia' => $entradasPorDia,
-            'salidasPorDia' => $salidasPorDia,
+            'diasEnMes' => $diasEnMes,
+            'entradasPeriodo' => $entradasPeriodo,
+            'salidasPeriodo' => $salidasPeriodo,
+            'categoriasMovimientos' => $categoriasMovimientos,
+            'serieEntradasMovimientos' => $serieEntradasMovimientos,
+            'serieSalidasMovimientos' => $serieSalidasMovimientos,
+            'valoresMovimientos' => $valoresMovimientos,
+            'ultimosMovimientos' => $ultimosMovimientos,
             'masMovidos' => $masMovidos,
         ]);
     }

@@ -143,6 +143,7 @@ public function update(Request $request, $id)
         $diasEnMes = \Carbon\Carbon::create($anio, $mes, 1)->daysInMonth;
 
         $stockInicio = $variante->stocks()
+            ->vigentes()
             ->where('fecha', '<', $inicioPeriodo->toDateString())
             ->get()
             ->groupBy('movimiento')
@@ -150,6 +151,8 @@ public function update(Request $request, $id)
 
         $stockInicio = ($stockInicio['entrada'] ?? 0) - ($stockInicio['salida'] ?? 0);
 
+        // Incluye los movimientos anulados para que se sigan mostrando en la tabla,
+        // pero no cuentan en los totales ni en el saldo acumulado (ver $movimientosVigentes).
         $movimientosPeriodo = $variante->stocks()
             ->with('empleado')
             ->whereBetween('fecha', [$inicioPeriodo->toDateString(), $finPeriodo->toDateString()])
@@ -158,13 +161,17 @@ public function update(Request $request, $id)
             ->orderBy('id')
             ->get();
 
-        $entradasPeriodo = $movimientosPeriodo->where('movimiento', 'entrada')->sum('cantidad');
-        $salidasPeriodo = $movimientosPeriodo->where('movimiento', 'salida')->sum('cantidad');
+        $movimientosVigentes = $movimientosPeriodo->reject->estaAnulado();
+
+        $entradasPeriodo = $movimientosVigentes->where('movimiento', 'entrada')->sum('cantidad');
+        $salidasPeriodo = $movimientosVigentes->where('movimiento', 'salida')->sum('cantidad');
         $stockCierre = $stockInicio + $entradasPeriodo - $salidasPeriodo;
 
         $saldo = $stockInicio;
         $filas = $movimientosPeriodo->map(function ($movimiento) use (&$saldo) {
-            $saldo += $movimiento->movimiento === 'entrada' ? $movimiento->cantidad : -$movimiento->cantidad;
+            if (!$movimiento->estaAnulado()) {
+                $saldo += $movimiento->movimiento === 'entrada' ? $movimiento->cantidad : -$movimiento->cantidad;
+            }
             return [
                 'movimiento' => $movimiento,
                 'saldo' => $saldo,

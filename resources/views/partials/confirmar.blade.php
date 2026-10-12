@@ -36,6 +36,7 @@
         formPendiente = form;
         disparador = document.activeElement;
         texto.textContent = form.dataset.confirmar;
+        btnBorrar.textContent = form.dataset.confirmarBoton || 'Borrar';
         abrir();
     });
 

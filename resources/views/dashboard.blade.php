@@ -10,13 +10,15 @@
             1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
             7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
         ];
-        $dias = array_keys($entradasPorDia);
-        $serieEntradas = array_values($entradasPorDia);
-        $serieSalidas = array_values($salidasPorDia);
+
+        $tituloMovimientos = $dia
+            ? 'Movimientos del ' . sprintf('%02d/%02d/%04d', $dia, $mes, $anio)
+            : 'Movimientos de ' . $meses[$mes] . ' ' . $anio;
     @endphp
 
     <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">Panel de control</h1>
 
+    {{-- ===================== ESTADO ACTUAL ===================== --}}
     <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6">
         <div class="col-span-2 rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm lg:col-span-1">
             <p class="text-sm font-medium text-slate-500">Valor total del inventario</p>
@@ -37,51 +39,8 @@
         </div>
     </div>
 
-    {{-- ===================== FILTRO DE MES/AÑO ===================== --}}
-    <form method="GET" action="/dashboard" class="mt-6 rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-            <div>
-                <label class="block text-xs font-medium text-slate-500">Mes</label>
-                <select name="mes" class="mt-1 w-full rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0D9488] focus:outline-none focus:ring-1 focus:ring-[#0D9488]">
-                    @foreach ($meses as $numero => $nombre)
-                        <option value="{{ $numero }}" {{ $mes == $numero ? 'selected' : '' }}>{{ $nombre }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-slate-500">Año</label>
-                <select name="anio" class="mt-1 w-full rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0D9488] focus:outline-none focus:ring-1 focus:ring-[#0D9488]">
-                    @for ($a = $anioMaximo; $a >= $anioMinimo; $a--)
-                        <option value="{{ $a }}" {{ $anio == $a ? 'selected' : '' }}>{{ $a }}</option>
-                    @endfor
-                </select>
-            </div>
-
-            <div>
-                <button type="submit"
-                        class="w-full rounded-md bg-[#0F172A] px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0F172A]/90 sm:w-auto">
-                    Filtrar
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <div class="mt-4 grid grid-cols-2 gap-4">
-        <div class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
-            <p class="text-sm font-medium text-slate-500">Entradas del mes</p>
-            <p class="mt-2 text-3xl font-bold tracking-tight text-[#0F172A]">{{ $entradasMes }}</p>
-        </div>
-
-        <div class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
-            <p class="text-sm font-medium text-slate-500">Salidas del mes</p>
-            <p class="mt-2 text-3xl font-bold tracking-tight text-[#0F172A]">{{ $salidasMes }}</p>
-        </div>
-    </div>
-
-    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
-
-        <div class="flex min-w-0 flex-col gap-6 lg:col-span-3">
+    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <div class="min-w-0 lg:col-span-3">
             <section class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-semibold text-[#0F172A]">Valor de inventario por producto</h2>
 
@@ -93,21 +52,9 @@
                     <p class="mt-4 text-sm text-slate-500">Todavía no hay productos con precio y stock cargados.</p>
                 @endif
             </section>
-
-            <section class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-[#0F172A]">Movimientos de {{ $meses[$mes] }} {{ $anio }}</h2>
-
-                @if ($entradasMes || $salidasMes)
-                    <div class="relative mt-4 h-64 min-w-0 sm:h-72">
-                        <canvas id="graficoMovimientos" role="img" aria-label="Gráfico de líneas de entradas y salidas de stock por día"></canvas>
-                    </div>
-                @else
-                    <p class="mt-4 text-sm text-slate-500">No hubo movimientos en este mes.</p>
-                @endif
-            </section>
         </div>
 
-        <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
+        <div class="min-w-0 lg:col-span-2">
             <section class="rounded-lg border border-[#E2E8F0] bg-white shadow-sm">
                 <div class="border-b border-[#E2E8F0] px-6 py-4">
                     <h2 class="text-lg font-semibold text-[#0F172A]">Stock bajo</h2>
@@ -130,7 +77,89 @@
                     @endforelse
                 </ul>
             </section>
+        </div>
+    </div>
 
+    {{-- ===================== PERÍODO ===================== --}}
+    <form method="GET" action="/dashboard" class="mt-10 rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-500">Mes</label>
+                <select name="mes" class="mt-1 w-full rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0D9488] focus:outline-none focus:ring-1 focus:ring-[#0D9488]">
+                    @foreach ($meses as $numero => $nombre)
+                        <option value="{{ $numero }}" {{ $mes == $numero ? 'selected' : '' }}>{{ $nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-500">Año</label>
+                <select name="anio" class="mt-1 w-full rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0D9488] focus:outline-none focus:ring-1 focus:ring-[#0D9488]">
+                    @for ($a = $anioMaximo; $a >= $anioMinimo; $a--)
+                        <option value="{{ $a }}" {{ $anio == $a ? 'selected' : '' }}>{{ $a }}</option>
+                    @endfor
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-500">Día</label>
+                <select name="dia" class="mt-1 w-full rounded-md border border-[#E2E8F0] px-3 py-1.5 text-sm focus:border-[#0D9488] focus:outline-none focus:ring-1 focus:ring-[#0D9488]">
+                    <option value="">Todo el mes</option>
+                    @for ($d = 1; $d <= $diasEnMes; $d++)
+                        <option value="{{ $d }}" {{ $dia == $d ? 'selected' : '' }}>{{ $d }}</option>
+                    @endfor
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 flex items-center gap-4">
+            <button type="submit"
+                    class="rounded-md bg-[#0F172A] px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0F172A]/90">
+                Filtrar
+            </button>
+            @if ($dia)
+                <a href="/dashboard" class="text-sm font-medium text-slate-500 hover:text-slate-700 hover:underline">Limpiar filtros</a>
+            @endif
+        </div>
+    </form>
+
+    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <div class="flex min-w-0 flex-col gap-6 lg:col-span-3">
+            <section class="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-[#0F172A]">{{ $tituloMovimientos }}</h2>
+
+                @if ($entradasPeriodo || $salidasPeriodo)
+                    <div class="relative mt-4 h-64 min-w-0 sm:h-72">
+                        <canvas id="graficoMovimientos" role="img" aria-label="Gráfico de entradas y salidas de stock"></canvas>
+                    </div>
+                @else
+                    <p class="mt-4 text-sm text-slate-500">No hubo movimientos en este período.</p>
+                @endif
+            </section>
+
+            <section class="rounded-lg border border-[#E2E8F0] bg-white shadow-sm">
+                <div class="border-b border-[#E2E8F0] px-6 py-4">
+                    <h2 class="text-lg font-semibold text-[#0F172A]">Más movidos</h2>
+                </div>
+
+                <ul class="divide-y divide-[#E2E8F0]">
+                    @forelse ($masMovidos as $item)
+                        <li class="flex items-center justify-between gap-4 px-6 py-3">
+                            <a href="/productos/{{ $item['producto']->id }}" class="min-w-0 break-words font-medium text-[#0D9488] hover:underline">
+                                {{ $item['producto']->nombre }}
+                            </a>
+                            <span class="shrink-0 text-sm text-slate-500">
+                                {{ $item['cantidad'] }} {{ $item['cantidad'] == 1 ? 'unidad' : 'unidades' }}
+                            </span>
+                        </li>
+                    @empty
+                        <li class="px-6 py-6 text-sm text-slate-500">No hubo salidas en este período.</li>
+                    @endforelse
+                </ul>
+            </section>
+        </div>
+
+        <div class="min-w-0 lg:col-span-2">
             <section class="rounded-lg border border-[#E2E8F0] bg-white shadow-sm">
                 <div class="border-b border-[#E2E8F0] px-6 py-4">
                     <h2 class="text-lg font-semibold text-[#0F172A]">Últimos movimientos</h2>
@@ -147,7 +176,7 @@
                                     @endif
                                 </p>
                                 <p class="text-sm text-slate-500">
-                                    {{ $movimiento->fecha }} · por {{ $movimiento->empleado?->nombre ?? 'empleado eliminado' }}
+                                    {{ \Carbon\Carbon::parse($movimiento->fecha)->format('d/m/Y') }} · por {{ $movimiento->empleado?->nombre ?? 'empleado eliminado' }}
                                 </p>
                             </div>
 
@@ -160,33 +189,11 @@
                             </div>
                         </li>
                     @empty
-                        <li class="px-6 py-6 text-sm text-slate-500">Todavía no hay movimientos registrados.</li>
-                    @endforelse
-                </ul>
-            </section>
-
-            <section class="rounded-lg border border-[#E2E8F0] bg-white shadow-sm">
-                <div class="border-b border-[#E2E8F0] px-6 py-4">
-                    <h2 class="text-lg font-semibold text-[#0F172A]">Más movidos del mes</h2>
-                </div>
-
-                <ul class="divide-y divide-[#E2E8F0]">
-                    @forelse ($masMovidos as $item)
-                        <li class="flex items-center justify-between gap-4 px-6 py-3">
-                            <a href="/productos/{{ $item['producto']->id }}" class="min-w-0 break-words font-medium text-[#0D9488] hover:underline">
-                                {{ $item['producto']->nombre }}
-                            </a>
-                            <span class="shrink-0 text-sm text-slate-500">
-                                {{ $item['cantidad'] }} {{ $item['cantidad'] == 1 ? 'unidad' : 'unidades' }}
-                            </span>
-                        </li>
-                    @empty
-                        <li class="px-6 py-6 text-sm text-slate-500">No hubo salidas en este mes.</li>
+                        <li class="px-6 py-6 text-sm text-slate-500">No hubo movimientos en este período.</li>
                     @endforelse
                 </ul>
             </section>
         </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -263,67 +270,106 @@
         const ctxMovimientos = document.getElementById('graficoMovimientos');
 
         if (ctxMovimientos) {
-            new Chart(ctxMovimientos, {
-                type: 'line',
-                data: {
-                    labels: {!! json_encode($dias) !!},
-                    datasets: [
-                        {
-                            label: 'Entradas',
-                            data: {!! json_encode($serieEntradas) !!},
-                            borderColor: '#0D9488',
-                            backgroundColor: '#0D9488',
-                            borderWidth: 2,
-                            cubicInterpolationMode: 'monotone',
-                            pointStyle: 'circle',
-                            pointRadius: 4,
-                            pointHoverRadius: 6
+            const esDiaUnico = {{ $dia ? 'true' : 'false' }};
+
+            if (esDiaUnico) {
+                new Chart(ctxMovimientos, {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode($categoriasMovimientos) !!},
+                        datasets: [{
+                            data: {!! json_encode($valoresMovimientos) !!},
+                            backgroundColor: ['#0D9488', '#0F172A'],
+                            borderRadius: 4,
+                            maxBarThickness: 64
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                ...tooltipEstilo,
+                                displayColors: false,
+                                callbacks: {
+                                    label: c => c.parsed.y + (c.parsed.y === 1 ? ' unidad' : ' unidades')
+                                }
+                            }
                         },
-                        {
-                            label: 'Salidas',
-                            data: {!! json_encode($serieSalidas) !!},
-                            borderColor: '#0F172A',
-                            backgroundColor: '#0F172A',
-                            borderWidth: 2,
-                            borderDash: [6, 4],
-                            cubicInterpolationMode: 'monotone',
-                            pointStyle: 'rectRot',
-                            pointRadius: 5,
-                            pointHoverRadius: 7
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 20, color: '#1E293B' }
-                        },
-                        tooltip: {
-                            ...tooltipEstilo,
-                            usePointStyle: true,
-                            callbacks: {
-                                label: c => c.dataset.label + ': ' + c.parsed.y + (c.parsed.y === 1 ? ' unidad' : ' unidades')
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: {
+                                beginAtZero: true,
+                                border: { display: false },
+                                ticks: { precision: 0 }
                             }
                         }
+                    }
+                });
+            } else {
+                new Chart(ctxMovimientos, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($categoriasMovimientos) !!},
+                        datasets: [
+                            {
+                                label: 'Entradas',
+                                data: {!! json_encode($serieEntradasMovimientos) !!},
+                                borderColor: '#0D9488',
+                                backgroundColor: '#0D9488',
+                                borderWidth: 2,
+                                cubicInterpolationMode: 'monotone',
+                                pointStyle: 'circle',
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'Salidas',
+                                data: {!! json_encode($serieSalidasMovimientos) !!},
+                                borderColor: '#0F172A',
+                                backgroundColor: '#0F172A',
+                                borderWidth: 2,
+                                borderDash: [6, 4],
+                                cubicInterpolationMode: 'monotone',
+                                pointStyle: 'rectRot',
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }
+                        ]
                     },
-                    scales: {
-                        x: {
-                            offset: true,
-                            grid: { display: false },
-                            ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 20, color: '#1E293B' }
+                            },
+                            tooltip: {
+                                ...tooltipEstilo,
+                                usePointStyle: true,
+                                callbacks: {
+                                    label: c => c.dataset.label + ': ' + c.parsed.y + (c.parsed.y === 1 ? ' unidad' : ' unidades')
+                                }
+                            }
                         },
-                        y: {
-                            beginAtZero: true,
-                            border: { display: false },
-                            ticks: { precision: 0 }
+                        scales: {
+                            x: {
+                                offset: true,
+                                grid: { display: false },
+                                ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                border: { display: false },
+                                ticks: { precision: 0 }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     </script>
 @endsection

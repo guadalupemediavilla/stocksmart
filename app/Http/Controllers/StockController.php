@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Stock;
+use Illuminate\Support\Facades\Auth;
 
 class StockController extends Controller
 {
@@ -18,5 +19,25 @@ class StockController extends Controller
         ]);
 
         return redirect('/productos/' . $request->id_producto);
+    }
+
+    public function anular($id)
+    {
+        $stock = Stock::findOrFail($id);
+
+        if ($stock->estaAnulado()) {
+            return redirect()->back();
+        }
+
+        if ($stock->dejariaStockNegativo()) {
+            return redirect()->back()->with('error', 'No se puede anular: el stock de la variante quedaría negativo.');
+        }
+
+        $stock->update([
+            'anulado_at' => now(),
+            'anulado_por' => Auth::id(),
+        ]);
+
+        return redirect()->back();
     }
 }

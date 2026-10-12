@@ -39,6 +39,79 @@ class MovimientoApiController extends Controller
         return response()->json($movimiento, 201);
     }
 
+    public function anular($id)
+    {
+        $movimiento = Stock::find($id);
+
+        if (!$movimiento) {
+            return response()->json(['mensaje' => 'Movimiento no encontrado'], 404);
+        }
+
+        if ($movimiento->estaAnulado()) {
+            return response()->json(['mensaje' => 'El movimiento ya estaba anulado'], 422);
+        }
+
+        if ($movimiento->dejariaStockNegativo()) {
+            return response()->json(['mensaje' => 'No se puede anular: el stock de la variante quedaría negativo.'], 422);
+        }
+
+        $movimiento->update([
+            'anulado_at' => now(),
+            'anulado_por' => Auth::id(),
+        ]);
+
+        return response()->json($movimiento);
+    }
+
+    public function anularLote(Request $request)
+    {
+        $datos = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer'],
+        ]);
+
+        $idEmpleado = Auth::id();
+
+        return DB::transaction(function () use ($datos, $idEmpleado) {
+            $movimientos = Stock::with('variante')
+                ->whereIn('id', $datos['ids'])
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $faltantes = collect($datos['ids'])->unique()->diff($movimientos->keys());
+
+            if ($faltantes->isNotEmpty()) {
+                return response()->json(['mensaje' => 'Movimiento no encontrado: '.$faltantes->implode(', ')], 404);
+            }
+
+            $yaAnulado = $movimientos->first(fn ($movimiento) => $movimiento->estaAnulado());
+
+            if ($yaAnulado) {
+                return response()->json(['mensaje' => "El movimiento {$yaAnulado->id} ya estaba anulado"], 422);
+            }
+
+            $negativo = $movimientos->groupBy('id_variante')->contains(function ($grupo) {
+                $deltaTotal = $grupo->sum(fn ($movimiento) => $movimiento->deltaAlAnular());
+
+                return $grupo->first()->variante->quedariaNegativoConDelta($deltaTotal);
+            });
+
+            if ($negativo) {
+                return response()->json(['mensaje' => 'No se puede anular: el stock de la variante quedaría negativo.'], 422);
+            }
+
+            foreach ($movimientos as $movimiento) {
+                $movimiento->update([
+                    'anulado_at' => now(),
+                    'anulado_por' => $idEmpleado,
+                ]);
+            }
+
+            return response()->json($movimientos->values());
+        });
+    }
+
     public function lote(Request $request)
     {
         $datos = $request->validate([

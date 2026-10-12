@@ -33,9 +33,16 @@ class Variante extends Model
 
     public function stockActual()
     {
-        $entradas = $this->stocks->where('movimiento', 'entrada')->sum('cantidad');
-        $salidas  = $this->stocks->where('movimiento', 'salida')->sum('cantidad');
+        $vigentes = $this->stocks->reject->estaAnulado();
+
+        $entradas = $vigentes->where('movimiento', 'entrada')->sum('cantidad');
+        $salidas  = $vigentes->where('movimiento', 'salida')->sum('cantidad');
 
         return $entradas - $salidas;
+    }
+
+    public function quedariaNegativoConDelta(int $delta): bool
+    {
+        return ($this->stockActual() + $delta) < 0;
     }
 }

@@ -60,4 +60,5 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/empleados/{id}/edit', [EmpleadoController::class, 'edit']);
 Route::put('/empleados/{id}', [EmpleadoController::class, 'update']);
 Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::post('/movimientos/{id}/anular', [StockController::class, 'anular']);
 });
