@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/variantes/{id}/edit', [VarianteController::class, 'edit']);
 Route::put('/variantes/{id}', [VarianteController::class, 'update']);
     Route::get('/variantes/{id}/movimientos', [VarianteController::class, 'movimientos']);
+    Route::post('/movimientos/{id}/anular', [StockController::class, 'anular']);
 
     Route::post('/variantes/{id_variante}/precios', [PrecioController::class, 'store']);
     Route::post('/variantes/{id_variante}/stocks', [StockController::class, 'store']);
@@ -60,5 +61,4 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/empleados/{id}/edit', [EmpleadoController::class, 'edit']);
 Route::put('/empleados/{id}', [EmpleadoController::class, 'update']);
 Route::get('/dashboard', [DashboardController::class, 'index']);
-    Route::post('/movimientos/{id}/anular', [StockController::class, 'anular']);
 });

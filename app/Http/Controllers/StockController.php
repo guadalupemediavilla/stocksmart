@@ -25,6 +25,10 @@ class StockController extends Controller
     {
         $stock = Stock::findOrFail($id);
 
+        if (Auth::user()->rol !== 'admin' && $stock->id_empleado != Auth::id()) {
+            return redirect()->back()->with('error', 'Solo podés anular movimientos que cargaste vos.');
+        }
+
         if ($stock->estaAnulado()) {
             return redirect()->back();
         }

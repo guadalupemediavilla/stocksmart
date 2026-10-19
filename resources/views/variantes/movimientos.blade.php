@@ -125,7 +125,7 @@
                         <p class="font-medium {{ $anulado ? 'text-slate-400' : 'text-[#0F172A]' }}">{{ $anulado ? '—' : 'Stock: ' . $fila['saldo'] }}</p>
                     </div>
 
-                    @if (Auth::user()->rol === 'admin' && !$anulado)
+                    @if ((Auth::user()->rol === 'admin' || $fila['movimiento']->id_empleado == Auth::id()) && !$anulado)
                         <form method="POST" action="/movimientos/{{ $fila['movimiento']->id }}/anular" class="mt-3 border-t border-[#E2E8F0] pt-3"
                               data-confirmar="¿Seguro de que querés anular este movimiento?" data-confirmar-boton="Anular">
                             @csrf
@@ -146,9 +146,7 @@
                         <th class="px-6 py-3">Cantidad</th>
                         <th class="px-6 py-3">Empleado</th>
                         <th class="px-6 py-3 text-right">Stock resultante</th>
-                        @if (Auth::user()->rol === 'admin')
-                            <th class="px-6 py-3 text-right">Acciones</th>
-                        @endif
+                        <th class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#E2E8F0]">
@@ -168,17 +166,15 @@
                             <td class="px-6 py-3 {{ $anulado ? 'text-slate-400 line-through' : 'text-slate-500' }}">{{ $fila['movimiento']->cantidad }}</td>
                             <td class="px-6 py-3 {{ $anulado ? 'text-slate-400' : 'text-slate-500' }}">{{ $fila['movimiento']->empleado?->nombre ?? 'empleado eliminado' }}</td>
                             <td class="px-6 py-3 text-right font-medium {{ $anulado ? 'text-slate-400' : 'text-[#0F172A]' }}">{{ $anulado ? '—' : $fila['saldo'] }}</td>
-                            @if (Auth::user()->rol === 'admin')
-                                <td class="px-6 py-3 text-right">
-                                    @if (!$anulado)
-                                        <form method="POST" action="/movimientos/{{ $fila['movimiento']->id }}/anular"
-                                              data-confirmar="¿Seguro de que querés anular este movimiento?" data-confirmar-boton="Anular">
-                                            @csrf
-                                            <button type="submit" class="font-medium text-slate-500 hover:text-slate-700 hover:underline">Anular</button>
-                                        </form>
-                                    @endif
-                                </td>
-                            @endif
+                            <td class="px-6 py-3 text-right">
+                                @if ((Auth::user()->rol === 'admin' || $fila['movimiento']->id_empleado == Auth::id()) && !$anulado)
+                                    <form method="POST" action="/movimientos/{{ $fila['movimiento']->id }}/anular"
+                                          data-confirmar="¿Seguro de que querés anular este movimiento?" data-confirmar-boton="Anular">
+                                        @csrf
+                                        <button type="submit" class="font-medium text-slate-500 hover:text-slate-700 hover:underline">Anular</button>
+                                    </form>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
